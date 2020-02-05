@@ -12,7 +12,7 @@ class Game:
     def __init__(self):
         pg.init()
         pg.display.set_caption(settings.TITLE)
-        self.screen = pg.display.set_mode((settings.MAP_WIDTH, settings.HAP_HEIGHT))
+        #self.screen = pg.display.set_mode((settings.MAP_WIDTH, settings.HAP_HEIGHT))
         self.clock = pg.time.Clock()
         self.load_data()
 
@@ -26,17 +26,20 @@ class Game:
     def new(self):
         self.all_sprites = pg.sprite.Group()
         self.walls = pg.sprite.Group()
-        for row, cells in enumerate(self.map_data):
-            for col, cell in enumerate(cells):
-                if (cell == "X"):
-                    tiles.Wall(self, col, row)
-                elif (cell == "S"):
-                    tiles.Start(self, col, row)
-                elif (cell == "G"):
-                    tiles.End(self, col, row)
+        for y, row in enumerate(self.map_data):
+            for x, tile in enumerate(row):
+                if (tile == "X"):
+                    tiles.Wall(self, x, y)
+                elif (tile == "S"):
+                    tiles.Start(self, x, y)
+                elif (tile == "G"):
+                    tiles.End(self, x, y)
 
-        # -1 correction for '\0 char
-        self.screen = pg.display.set_mode(((len(self.map_data[0]) - 1) * settings.TILE_SIZE, len(self.map_data) * settings.TILE_SIZE))
+        # Updates screen size to loaded map
+        # -1 correction for '\0' char in str
+        settings.MAP_WIDTH = (len(self.map_data[0]) - 1) * settings.TILE_SIZE
+        settings.HAP_HEIGHT = len(self.map_data) * settings.TILE_SIZE
+        self.screen = pg.display.set_mode((settings.MAP_WIDTH, settings.HAP_HEIGHT))
 
     def run(self):
         self.running = True
