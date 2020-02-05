@@ -1,0 +1,4 @@
+# Cache and log
+/__pycache__
+/logs
+/work
