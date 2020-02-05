@@ -5,6 +5,7 @@ from os import path
 import game_settings as settings
 import game_tiles as tiles
 import game_assets as assets
+import algorithms as alg
 
 
 class Game:
@@ -26,14 +27,22 @@ class Game:
     def new(self):
         self.all_sprites = pg.sprite.Group()
         self.walls = pg.sprite.Group()
+        tmpWalls = []
         for y, row in enumerate(self.map_data):
             for x, tile in enumerate(row):
                 if (tile == "X"):
                     tiles.Wall(self, x, y)
+                    tmpWalls.append((x, y))
                 elif (tile == "S"):
                     tiles.Start(self, x, y)
+                    self.start = (x, y)
                 elif (tile == "G"):
-                    tiles.End(self, x, y)
+                    tiles.Goal(self, x, y)
+                    self.goal = (x, y)
+
+        self.sGraph = alg.SquareGraph(len(self.map_data[0]) - 1, len(self.map_data))
+        self.sGraph.walls = tmpWalls[:]
+        
 
         # Updates screen size to loaded map
         # -1 correction for '\0' char in str
@@ -51,6 +60,13 @@ class Game:
 
     def update(self):
         self.all_sprites.update()
+
+        # catch inputs
+        keystate = pg.key.get_pressed()
+        if keystate[pg.K_b]:
+            path = alg.BFS(self.sGraph, self.start, self.goal)
+            print(path)
+
 
     def draw_grid(self):
         for x in range(0, settings.MAP_WIDTH, settings.TILE_SIZE):

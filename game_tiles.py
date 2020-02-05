@@ -21,19 +21,17 @@ class Start(sprite.Sprite):
         self.rect.x = x * settings.TILE_SIZE
         self.rect.y = y * settings.TILE_SIZE
 
-class End(sprite.Sprite):
+class Goal(sprite.Sprite):
     def __init__(self, game, x, y):
         self.groups = game.all_sprites
         sprite.Sprite.__init__(self, self.groups) # Add self to group
         self.game = game
-        #self.image = assets.LoadSprite("unicorn.jpg")
         self.image = Surface((settings.TILE_SIZE, settings.TILE_SIZE))
         self.image.fill(settings.COLOR["RED"])
         self.rect = self.image.get_rect()
         self.x = x
         self.y = y
         
-        # can be moved into update 
         self.rect.x = x * settings.TILE_SIZE
         self.rect.y = y * settings.TILE_SIZE
 
