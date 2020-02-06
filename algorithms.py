@@ -13,6 +13,19 @@ class Queue:
     def get(self):
         return self.elements.popleft()
 
+class Stack:
+    def __init__(self):
+        self.elements = collections.deque()
+
+    def empty(self):
+        return len(self.elements) == 0
+
+    def put(self, x):
+        self.elements.append(x)
+
+    def get(self):
+        return self.elements.pop()
+
 class SquareGraph:
     def __init__(self, width, height):
         self.width = width
@@ -72,3 +85,25 @@ def BFS(graph, start, goal):
 
     return path
 
+def DFS(graph, start, goal):
+    front = Stack()
+    front.put(start)
+    path = {}
+    path[start] = None
+
+    while (not front.empty()):
+        # Pops next in queue
+        current = front.get()
+
+        # Goal found
+        if (current == goal):
+            break
+        
+        # Iterate through current neighbors
+        for next in graph.neighbors(current):
+            # If neighbor isn't in current path
+            if (next not in path):
+                front.put(next)
+                path[next] = current
+
+    return path

@@ -13,10 +13,11 @@ class Game:
     def __init__(self):
         pg.init()
         pg.display.set_caption(settings.TITLE)
-        #self.screen = pg.display.set_mode((settings.MAP_WIDTH, settings.HAP_HEIGHT))
         self.clock = pg.time.Clock()
         self.load_data()
         self.path = None
+        self.pathqueue = None
+        self.pathprocess = []
 
 
     def load_data(self):
@@ -64,8 +65,38 @@ class Game:
 
         # catch inputs
         keystate = pg.key.get_pressed()
-        if keystate[pg.K_b]:
+        if keystate[pg.K_ESCAPE]:
+            pg.event.post(pg.event.Event(pg.QUIT))
+
+        if keystate[pg.K_b]: # BFS
+            self.pathqueue = None
             self.path = alg.BFS(self.sGraph, self.start, self.goal)
+
+        if keystate[pg.K_n]: # Visual BFS
+            self.path = alg.BFS(self.sGraph, self.start, self.goal)
+            self.pathqueue = alg.Queue()
+            self.pathprocess = []
+            for child, parent in self.path.items():
+                if parent == None:
+                    continue
+                chi = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in child)
+                par = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in parent)
+                self.pathqueue.put((chi, par))
+
+        if keystate[pg.K_d]: # DFS
+            self.pathqueue = None
+            self.path = alg.DFS(self.sGraph, self.start, self.goal)
+
+        if keystate[pg.K_f]: # Visual DFS
+            self.path = alg.DFS(self.sGraph, self.start, self.goal)
+            self.pathqueue = alg.Queue()
+            self.pathprocess = []
+            for child, parent in self.path.items():
+                if parent == None:
+                    continue
+                chi = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in child)
+                par = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in parent)
+                self.pathqueue.put((chi, par))
 
 
     def draw_grid(self):
@@ -74,11 +105,23 @@ class Game:
         for y in range(0, settings.HAP_HEIGHT, settings.TILE_SIZE):
             pg.draw.line(self.screen, settings.COLOR["LIGHTGRAY"], (0, y), (settings.MAP_WIDTH, y))
 
-        if(self.path):
+    def draw_path(self):
+        # Visual step-by-step representation of search
+        if(self.pathqueue and not self.pathqueue.empty()):
+            # Correction for tilesize
+            self.pathprocess.append(self.pathqueue.get())
+            # Draw the current added path
+            for pair in self.pathprocess:
+                (child, parent) = pair
+                pg.draw.line(self.screen, settings.COLOR["BLACK"], child, parent)
+            # Wait till next draw
+            pg.time.delay(500)
+
+        # Final visual representation
+        elif(self.path):
             for child, parent in self.path.items():
                 if parent == None:
                     continue
-                
                 # Correction for tilesize
                 cOffset = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in child)
                 pOffset = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in parent)
@@ -88,6 +131,7 @@ class Game:
         self.screen.fill(settings.COLOR["WHITE"])
         self.all_sprites.draw(self.screen)
         self.draw_grid()
+        self.draw_path()
         pg.display.flip()
 
     def events(self):
