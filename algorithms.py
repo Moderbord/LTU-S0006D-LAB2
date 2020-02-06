@@ -19,21 +19,35 @@ class SquareGraph:
         self.height = height
         self.walls = []
 
-    def in_bounds(self, id):
-        (x, y) = id
+    def in_bounds(self, neighbor):
+        (x, y) = neighbor
         return 0 <= x < self.width and 0 <= y < self.height
 
-    def passable(self, id):
-        return id not in self.walls
+    def passable(self, neighbor):
+        return neighbor not in self.walls
 
-    def neighbors(self, id):
-        (x, y) = id
-        #results = [(x+1, y), (x, y-1), (x-1, y), (x, y+1)] # 4x movement
-        results = [(x+1, y), (x, y-1), (x-1, y), (x, y+1), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)] # 8x movement
+    def cutting_corner(self, current, neighbor):
+        (x, y) = neighbor
+        # movement from current to neighbor
+        dx = neighbor[0] - current[0]
+        dy = neighbor[1] - current[1]
+        # optimization (movement is not diagonal and check can be skipped)
+        if (dx * dy == 0):
+            return True
+        # possible blocking walls
+        posibleWalls = [(x-dx, y), (x, y-dy)]
+        # If any of the neighbors is a wall return false
+        return posibleWalls[0] not in self.walls and posibleWalls[1] not in self.walls
 
-        results = filter(self.in_bounds, results)
-        results = filter(self.passable, results)
-        return results
+    def neighbors(self, current):
+        (x, y) = current
+        #currentNeighbors = [(x+1, y), (x, y-1), (x-1, y), (x, y+1)] # 4x movement
+        currentNeighbors = [(x+1, y), (x, y-1), (x-1, y), (x, y+1), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)] # 8x movement
+
+        currentNeighbors = filter(self.in_bounds, currentNeighbors)
+        currentNeighbors = filter(self.passable, currentNeighbors)
+        currentNeighbors = filter(lambda neighbor: self.cutting_corner(current, neighbor), currentNeighbors)
+        return currentNeighbors
     
 def BFS(graph, start, goal):
     front = Queue()
@@ -42,12 +56,16 @@ def BFS(graph, start, goal):
     path[start] = None
 
     while (not front.empty()):
+        # Pops next in queue
         current = front.get()
 
+        # Goal found
         if (current == goal):
             break
-
+        
+        # Iterate through current neighbors
         for next in graph.neighbors(current):
+            # If neighbor isn't in current path
             if (next not in path):
                 front.put(next)
                 path[next] = current
