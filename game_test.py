@@ -16,11 +16,12 @@ class Game:
         #self.screen = pg.display.set_mode((settings.MAP_WIDTH, settings.HAP_HEIGHT))
         self.clock = pg.time.Clock()
         self.load_data()
+        self.path = None
 
 
     def load_data(self):
         self.map_data = []
-        with open(path.join(assets.map_folder, "Map1.txt"), "rt") as f:
+        with open(path.join(assets.map_folder, "Map3.txt"), "rt") as f:
             for line in f:
                 self.map_data.append(line)
 
@@ -64,8 +65,7 @@ class Game:
         # catch inputs
         keystate = pg.key.get_pressed()
         if keystate[pg.K_b]:
-            path = alg.BFS(self.sGraph, self.start, self.goal)
-            print(path)
+            self.path = alg.BFS(self.sGraph, self.start, self.goal)
 
 
     def draw_grid(self):
@@ -73,6 +73,16 @@ class Game:
             pg.draw.line(self.screen, settings.COLOR["LIGHTGRAY"], (x, 0), (x, settings.HAP_HEIGHT))
         for y in range(0, settings.HAP_HEIGHT, settings.TILE_SIZE):
             pg.draw.line(self.screen, settings.COLOR["LIGHTGRAY"], (0, y), (settings.MAP_WIDTH, y))
+
+        if(self.path):
+            for child, parent in self.path.items():
+                if parent == None:
+                    continue
+                
+                # Correction for tilesize
+                cOffset = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in child)
+                pOffset = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in parent)
+                pg.draw.line(self.screen, settings.COLOR["BLACK"], cOffset, pOffset)
 
     def draw(self):
         self.screen.fill(settings.COLOR["WHITE"])
