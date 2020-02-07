@@ -77,33 +77,30 @@ def BFS(graph, start, goal):
             break
         
         # Iterate through current neighbors
-        for next in graph.neighbors(current):
+        for node in graph.neighbors(current):
             # If neighbor isn't in current path
-            if (next not in path):
-                front.put(next)
-                path[next] = current
+            if (node not in path):
+                front.put(node)
+                path[node] = current
 
     return path
 
 def DFS(graph, start, goal):
-    front = Stack()
-    front.put(start)
     path = {}
     path[start] = None
+    found = False
 
-    while (not front.empty()):
-        # Pops next in queue
-        current = front.get()
+    def inner(current):
 
-        # Goal found
-        if (current == goal):
-            break
-        
-        # Iterate through current neighbors
-        for next in graph.neighbors(current):
-            # If neighbor isn't in current path
-            if (next not in path):
-                front.put(next)
-                path[next] = current
+        for cell in graph.neighbors(current):
 
+            if(current == goal):
+                return goal
+
+            elif cell not in path:
+                path[cell] = current
+                if(inner(cell) == goal):
+                    return goal
+
+    inner(start)
     return path

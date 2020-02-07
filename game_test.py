@@ -7,7 +7,6 @@ import game_tiles as tiles
 import game_assets as assets
 import algorithms as alg
 
-
 class Game:
 
     def __init__(self):
@@ -68,11 +67,11 @@ class Game:
         if keystate[pg.K_ESCAPE]:
             pg.event.post(pg.event.Event(pg.QUIT))
 
-        if keystate[pg.K_b]: # BFS
+        if keystate[pg.K_KP1]: # BFS
             self.pathqueue = None
             self.path = alg.BFS(self.sGraph, self.start, self.goal)
 
-        if keystate[pg.K_n]: # Visual BFS
+        if keystate[pg.K_KP2]: # Visual BFS
             self.path = alg.BFS(self.sGraph, self.start, self.goal)
             self.pathqueue = alg.Queue()
             self.pathprocess = []
@@ -83,11 +82,11 @@ class Game:
                 par = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in parent)
                 self.pathqueue.put((chi, par))
 
-        if keystate[pg.K_d]: # DFS
+        if keystate[pg.K_KP4]: # DFS
             self.pathqueue = None
             self.path = alg.DFS(self.sGraph, self.start, self.goal)
 
-        if keystate[pg.K_f]: # Visual DFS
+        if keystate[pg.K_KP5]: # Visual DFS
             self.path = alg.DFS(self.sGraph, self.start, self.goal)
             self.pathqueue = alg.Queue()
             self.pathprocess = []
@@ -114,8 +113,8 @@ class Game:
             for pair in self.pathprocess:
                 (child, parent) = pair
                 pg.draw.line(self.screen, settings.COLOR["BLACK"], child, parent)
-            # Wait till next draw
-            pg.time.delay(500)
+            # Wait till next draw (ms)
+            pg.time.delay(250)
 
         # Final visual representation
         elif(self.path):
@@ -140,7 +139,6 @@ class Game:
             if event.type == pg.QUIT:
                 pg.quit()
                 sys.exit()
-
 
 game = Game()
 game.new()
