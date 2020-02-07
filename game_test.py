@@ -1,6 +1,7 @@
-import pygame as pg
-import sys
 from os import path
+
+import sys
+import pygame as pg
 
 import game_settings as settings
 import game_tiles as tiles
@@ -18,16 +19,17 @@ class Game:
         self.pathqueue = None
         self.pathprocess = []
 
-
+    # Loads map file 
     def load_data(self):
         self.map_data = []
-        with open(path.join(assets.map_folder, "Map3.txt"), "rt") as f:
+        with open(path.join(assets.map_folder, "Map1.txt"), "rt") as f:
             for line in f:
                 self.map_data.append(line)
 
     def new(self):
         self.all_sprites = pg.sprite.Group()
         self.walls = pg.sprite.Group()
+        # Construct tileset from map data
         tmpWalls = []
         for y, row in enumerate(self.map_data):
             for x, tile in enumerate(row):
@@ -40,10 +42,13 @@ class Game:
                 elif (tile == "G"):
                     tiles.Goal(self, x, y)
                     self.goal = (x, y)
-
+        # Constructs a sqaure graph from map data
         self.sGraph = alg.SquareGraph(len(self.map_data[0]) - 1, len(self.map_data))
         self.sGraph.walls = tmpWalls[:]
         
+        # Constructs a weighed grahp from map data
+        self.wGraph = alg.WeightedGraph(len(self.map_data[0]) - 1, len(self.map_data))
+        self.wGraph.walls = tmpWalls[:]
 
         # Updates screen size to loaded map
         # -1 correction for '\0' char in str
@@ -76,7 +81,7 @@ class Game:
             self.pathqueue = alg.Queue()
             self.pathprocess = []
             for child, parent in self.path.items():
-                if parent == None:
+                if parent is None:
                     continue
                 chi = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in child)
                 par = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in parent)
@@ -91,7 +96,39 @@ class Game:
             self.pathqueue = alg.Queue()
             self.pathprocess = []
             for child, parent in self.path.items():
-                if parent == None:
+                if parent is None:
+                    continue
+                chi = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in child)
+                par = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in parent)
+                self.pathqueue.put((chi, par))
+
+        if keystate[pg.K_KP7]: # Dijkstra
+            self.pathqueue = None
+            self.path = alg.Dijkstra(self.wGraph, self.start, self.goal)
+
+        if keystate[pg.K_KP8]: # Visual Dijkstra
+            self.path = alg.Dijkstra(self.wGraph, self.start, self.goal)
+            self.pathqueue = alg.Queue()
+            self.pathprocess = []
+            for child, parent in self.path.items():
+                if parent is None:
+                    continue
+                chi = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in child)
+                par = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in parent)
+                self.pathqueue.put((chi, par))
+
+        if keystate[pg.K_KP9]: # Dijkstra only path
+            self.pathqueue = None
+            d_path = alg.Dijkstra(self.wGraph, self.start, self.goal)
+            self.path = alg.ReconstructPath(d_path, self.start, self.goal)
+
+        if keystate[pg.K_KP6]: # Visual Dijkstra only path
+            d_path = alg.Dijkstra(self.wGraph, self.start, self.goal)
+            self.path = alg.ReconstructPath(d_path, self.start, self.goal)
+            self.pathqueue = alg.Stack()
+            self.pathprocess = []
+            for child, parent in self.path.items():
+                if parent is None:
                     continue
                 chi = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in child)
                 par = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in parent)
@@ -114,7 +151,7 @@ class Game:
                 (child, parent) = pair
                 pg.draw.line(self.screen, settings.COLOR["BLACK"], child, parent)
             # Wait till next draw (ms)
-            pg.time.delay(250)
+            pg.time.delay(100)
 
         # Final visual representation
         elif(self.path):

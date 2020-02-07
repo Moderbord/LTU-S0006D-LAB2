@@ -1,5 +1,3 @@
-
-
 # Map size
 TILE_SIZE = 16
 HAP_HEIGHT = 512
