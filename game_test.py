@@ -22,7 +22,7 @@ class Game:
     # Loads map file 
     def load_data(self):
         self.map_data = []
-        with open(path.join(assets.map_folder, "Map1.txt"), "rt") as f:
+        with open(path.join(assets.map_folder, "Map3.txt"), "rt") as f:
             for line in f:
                 self.map_data.append(line)
 
@@ -30,25 +30,28 @@ class Game:
         self.all_sprites = pg.sprite.Group()
         self.walls = pg.sprite.Group()
         # Construct tileset from map data
-        tmpWalls = []
+        tmp_walls = []
         for y, row in enumerate(self.map_data):
             for x, tile in enumerate(row):
                 if (tile == "X"):
                     tiles.Wall(self, x, y)
-                    tmpWalls.append((x, y))
+                    tmp_walls.append((x, y))
                 elif (tile == "S"):
                     tiles.Start(self, x, y)
                     self.start = (x, y)
                 elif (tile == "G"):
                     tiles.Goal(self, x, y)
                     self.goal = (x, y)
+
+        # TODO randomize start and goal positions
+        
         # Constructs a sqaure graph from map data
         self.sGraph = alg.SquareGraph(len(self.map_data[0]) - 1, len(self.map_data))
-        self.sGraph.walls = tmpWalls[:]
+        self.sGraph.walls = tmp_walls[:]
         
-        # Constructs a weighed grahp from map data
+        # Constructs a weighed graph from map data
         self.wGraph = alg.WeightedGraph(len(self.map_data[0]) - 1, len(self.map_data))
-        self.wGraph.walls = tmpWalls[:]
+        self.wGraph.walls = tmp_walls[:]
 
         # Updates screen size to loaded map
         # -1 correction for '\0' char in str
@@ -72,68 +75,67 @@ class Game:
         if keystate[pg.K_ESCAPE]:
             pg.event.post(pg.event.Event(pg.QUIT))
 
-        if keystate[pg.K_KP1]: # BFS
+        if keystate[pg.K_q]: # BFS
             self.pathqueue = None
             self.path = alg.BFS(self.sGraph, self.start, self.goal)
 
-        if keystate[pg.K_KP2]: # Visual BFS
+        if keystate[pg.K_a]: # Visual BFS
             self.path = alg.BFS(self.sGraph, self.start, self.goal)
-            self.pathqueue = alg.Queue()
-            self.pathprocess = []
-            for child, parent in self.path.items():
-                if parent is None:
-                    continue
-                chi = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in child)
-                par = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in parent)
-                self.pathqueue.put((chi, par))
+            self.visual_helper()
 
-        if keystate[pg.K_KP4]: # DFS
+        if keystate[pg.K_w]: # DFS
             self.pathqueue = None
             self.path = alg.DFS(self.sGraph, self.start, self.goal)
 
-        if keystate[pg.K_KP5]: # Visual DFS
+        if keystate[pg.K_s]: # Visual DFS
             self.path = alg.DFS(self.sGraph, self.start, self.goal)
-            self.pathqueue = alg.Queue()
-            self.pathprocess = []
-            for child, parent in self.path.items():
-                if parent is None:
-                    continue
-                chi = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in child)
-                par = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in parent)
-                self.pathqueue.put((chi, par))
+            self.visual_helper()
 
-        if keystate[pg.K_KP7]: # Dijkstra
+        if keystate[pg.K_e]: # Dijkstra
             self.pathqueue = None
             self.path = alg.Dijkstra(self.wGraph, self.start, self.goal)
 
-        if keystate[pg.K_KP8]: # Visual Dijkstra
+        if keystate[pg.K_d]: # Visual Dijkstra
             self.path = alg.Dijkstra(self.wGraph, self.start, self.goal)
-            self.pathqueue = alg.Queue()
-            self.pathprocess = []
-            for child, parent in self.path.items():
-                if parent is None:
-                    continue
-                chi = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in child)
-                par = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in parent)
-                self.pathqueue.put((chi, par))
+            self.visual_helper()
 
-        if keystate[pg.K_KP9]: # Dijkstra only path
+        if keystate[pg.K_z]: # Dijkstra - only path
             self.pathqueue = None
             d_path = alg.Dijkstra(self.wGraph, self.start, self.goal)
             self.path = alg.ReconstructPath(d_path, self.start, self.goal)
 
-        if keystate[pg.K_KP6]: # Visual Dijkstra only path
+        if keystate[pg.K_x]: # Visual Dijkstra - only path
             d_path = alg.Dijkstra(self.wGraph, self.start, self.goal)
             self.path = alg.ReconstructPath(d_path, self.start, self.goal)
-            self.pathqueue = alg.Stack()
-            self.pathprocess = []
-            for child, parent in self.path.items():
-                if parent is None:
-                    continue
-                chi = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in child)
-                par = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in parent)
-                self.pathqueue.put((chi, par))
+            self.visual_helper(True)
 
+        if keystate[pg.K_r]: # Astar
+            self.pathqueue = None
+            self.path = alg.Astar(self.wGraph, self.start, self.goal)
+
+        if keystate[pg.K_f]: # Visual Astar
+            self.path = alg.Astar(self.wGraph, self.start, self.goal)
+            self.visual_helper()
+
+        if keystate[pg.K_c]: # Astar - only path
+            self.pathqueue = None
+            d_path = alg.Astar(self.wGraph, self.start, self.goal)
+            self.path = alg.ReconstructPath(d_path, self.start, self.goal)
+
+        if keystate[pg.K_v]: # Visual Astar - only path
+            d_path = alg.Astar(self.wGraph, self.start, self.goal)
+            self.path = alg.ReconstructPath(d_path, self.start, self.goal)
+            self.visual_helper(True)
+
+    def visual_helper(self, use_stack=False):
+        self.pathqueue = alg.Stack() if use_stack else alg.Queue()
+        self.pathprocess = []
+        for child, parent in self.path.items():
+            if parent is None:
+                continue
+            chi = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in child)
+            par = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in parent)
+            self.pathqueue.put((chi, par))
 
     def draw_grid(self):
         for x in range(0, settings.MAP_WIDTH, settings.TILE_SIZE):
@@ -144,9 +146,9 @@ class Game:
     def draw_path(self):
         # Visual step-by-step representation of search
         if(self.pathqueue and not self.pathqueue.empty()):
-            # Correction for tilesize
+            # Append next bit of search
             self.pathprocess.append(self.pathqueue.get())
-            # Draw the current added path
+            # Draw the current path
             for pair in self.pathprocess:
                 (child, parent) = pair
                 pg.draw.line(self.screen, settings.COLOR["BLACK"], child, parent)

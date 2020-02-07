@@ -37,7 +37,7 @@ class PriorityQueue:
         self.elements[item] = priority
 
     def get(self):
-        best_item, best_priority = None, 99999
+        best_item, best_priority = None, 99999 # "infinity"
         for item, priority in self.elements.items():
             # Searches for the item with best priority
             if best_item is None or priority < best_priority:
@@ -75,8 +75,12 @@ class SquareGraph:
 
     def neighbors(self, current):
         (x, y) = current
-        #current_neighbors = [(x+1, y), (x, y-1), (x-1, y), (x, y+1)] # 4x movement
-        current_neighbors = [(x+1, y), (x, y-1), (x-1, y), (x, y+1), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)] # 8x movement
+        
+        # 4x movement
+        #current_neighbors = [(x+1, y), (x, y-1), (x-1, y), (x, y+1)]
+        
+        # 8x movement
+        current_neighbors = [(x+1, y), (x, y-1), (x-1, y), (x, y+1), (x+1, y+1), (x+1, y-1), (x-1, y+1), (x-1, y-1)]
 
         current_neighbors = filter(self.in_bounds, current_neighbors)
         current_neighbors = filter(self.passable, current_neighbors)
@@ -117,6 +121,25 @@ def BFS(graph, start, goal):
 
     return path
 
+def DFS(graph, start, goal):
+    path = {}
+    path[start] = None
+
+    def inner(current):
+
+        for cell in graph.neighbors(current):
+
+            if current == goal:
+                return goal
+
+            elif cell not in path:
+                path[cell] = current
+                if inner(cell) == goal:
+                    return goal
+
+    inner(start)
+    return path
+
 def Dijkstra(graph, start, goal):
     front = PriorityQueue()
     front.put(start, 0)
@@ -133,7 +156,7 @@ def Dijkstra(graph, start, goal):
         if (current == goal):
             break
 
-        # Check cost if each of that ones neighbors
+        # Check cost of each neighbor next to current
         for neighbor in graph.neighbors(current):
             # new cost is equal to current travel cost + cost to travel to next neighbor
             new_cost = travel_costs[current] + graph.cost(current, neighbor)
@@ -141,6 +164,41 @@ def Dijkstra(graph, start, goal):
             if neighbor not in travel_costs or new_cost < travel_costs[neighbor]:
                 travel_costs[neighbor] = new_cost
                 front.put(neighbor, new_cost)
+                path[neighbor] = current
+
+    return path
+
+# Manhattan distance heuristic
+def Heuristic(from_node, to_node):
+    (x1, y1) = from_node
+    (x2, y2) = to_node
+    return abs(x2 - x1) + abs(y2 - y1)
+
+def Astar(graph, start, goal):
+    front = PriorityQueue()
+    front.put(start, 0)
+    path = {}
+    travel_costs = {}
+    path[start] = None
+    travel_costs[start] = 0
+
+    while not front.empty():
+        # Get the current best option
+        current = front.get()
+
+        # Goal found
+        if (current == goal):
+            break
+
+        # Check cost of each neighbor next to current
+        for neighbor in graph.neighbors(current):
+            # new cost is equal to current travel cost + cost to travel to next neighbor
+            new_cost = travel_costs[current] + graph.cost(current, neighbor)
+            # If travel cost to neighbor hasn't already been evaluated, or is lower than previous evaluated travel cost, update the travel cost
+            if neighbor not in travel_costs or new_cost < travel_costs[neighbor]:
+                travel_costs[neighbor] = new_cost
+                priority = new_cost + Heuristic(neighbor, goal) # Heuristic influence
+                front.put(neighbor, priority)
                 path[neighbor] = current
 
     return path
@@ -153,22 +211,3 @@ def ReconstructPath(path, start, goal):
         current = path[current]
     trace[start] = None
     return trace
-
-def DFS(graph, start, goal):
-    path = {}
-    path[start] = None
-
-    def inner(current):
-
-        for cell in graph.neighbors(current):
-
-            if current == goal :
-                return goal
-
-            elif cell not in path:
-                path[cell] = current
-                if inner(cell) == goal:
-                    return goal
-
-    inner(start)
-    return path
