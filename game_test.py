@@ -16,6 +16,7 @@ import game_settings as settings
 import game_tiles as tiles
 import game_assets as assets
 import algorithms as alg
+import map_data
 
 
 
@@ -29,47 +30,60 @@ class Game:
         self.path = None
         self.pathqueue = None
         self.pathprocess = []
+        self.map = map_data.TileMap()
+
 
     # Loads map file 
     def load_map(self, map_name):
-        self.walls = pg.sprite.Group()
-        
-        # parse file
-        m_width = 0
-        m_height = 0
-        tmp_walls = []
-        with open(path.join(assets.map_folder, map_name), "rt") as f:
-            # Construct tileset from map data
-            for y, row in enumerate(f):
-                m_height += 1
-                m_width = 0
-                for x, tile in enumerate(row):
-                    m_width += 1
-                    if (tile == "X"):
-                        tiles.Wall(self, x, y)
-                        tmp_walls.append((x, y))
-                    elif (tile == "S"):
-                        tiles.Start(self, x, y)
-                        self.start = (x, y)
-                    elif (tile == "G"):
-                        tiles.Goal(self, x, y)
-                        self.goal = (x, y)
 
-        # TODO randomize start and goal positions
-        
-        # Constructs a sqaure graph from map data
-        self.square_graph = alg.SquareGraph(m_width, m_height)
-        self.square_graph.walls = tmp_walls[:]
-        
-        # Constructs a weighed graph from map data
-        self.weighed_graph = alg.WeightedGraph(m_width, m_height)
-        self.weighed_graph.walls = tmp_walls[:]
+        self.map.load_map_template(map_name)
 
         # Updates screen size to loaded map
         # -1 correction for '\0' char in str
-        settings.MAP_WIDTH = m_width * settings.TILE_SIZE
-        settings.HAP_HEIGHT = m_height * settings.TILE_SIZE
+        settings.MAP_WIDTH = self.map.map_width * settings.TILE_SIZE
+        settings.HAP_HEIGHT = self.map.map_height * settings.TILE_SIZE
         self.screen = pg.display.set_mode((settings.MAP_WIDTH, settings.HAP_HEIGHT))
+
+    # # Loads map file 
+    # def load_map_old(self, map_name):
+    #     self.walls = pg.sprite.Group()
+        
+    #     # parse file
+    #     m_width = 0
+    #     m_height = 0
+    #     tmp_walls = []
+    #     with open(path.join(assets.map_folder, map_name), "rt") as f:
+    #         # Construct tileset from map data
+    #         for y, row in enumerate(f):
+    #             m_height += 1
+    #             m_width = 0
+    #             for x, tile in enumerate(row):
+    #                 m_width += 1
+    #                 if (tile == "X"):
+    #                     tiles.Wall(self, x, y)
+    #                     tmp_walls.append((x, y))
+    #                 elif (tile == "S"):
+    #                     tiles.Start(self, x, y)
+    #                     self.start = (x, y)
+    #                 elif (tile == "G"):
+    #                     tiles.Goal(self, x, y)
+    #                     self.goal = (x, y)
+
+    #     # TODO randomize start and goal positions
+        
+    #     # Constructs a sqaure graph from map data
+    #     self.square_graph = alg.SquareGraph(m_width, m_height)
+    #     self.square_graph.walls = tmp_walls[:]
+        
+    #     # Constructs a weighed graph from map data
+    #     self.weighed_graph = alg.WeightedGraph(m_width, m_height)
+    #     self.weighed_graph.walls = tmp_walls[:]
+
+    #     # Updates screen size to loaded map
+    #     # -1 correction for '\0' char in str
+    #     settings.MAP_WIDTH = m_width * settings.TILE_SIZE
+    #     settings.HAP_HEIGHT = m_height * settings.TILE_SIZE
+    #     self.screen = pg.display.set_mode((settings.MAP_WIDTH, settings.HAP_HEIGHT))
 
     def run(self):
         self.running = True
@@ -89,54 +103,54 @@ class Game:
 
         if keystate[pg.K_q]: # BFS
             self.pathqueue = None
-            self.path = alg.BFS(self.square_graph, self.start, self.goal)
+            self.path = alg.BFS(alg.SquareGraph(self.map), self.map.custom_start, self.map.custom_goal)
 
         if keystate[pg.K_a]: # Visual BFS
-            self.path = alg.BFS(self.square_graph, self.start, self.goal)
+            self.path = alg.BFS(alg.SquareGraph(self.map), self.map.custom_start, self.map.custom_goal)
             self.visual_helper()
 
         if keystate[pg.K_w]: # DFS
             self.pathqueue = None
-            self.path = alg.DFS(self.square_graph, self.start, self.goal)
+            self.path = alg.DFS(alg.SquareGraph(self.map), self.map.custom_start, self.map.custom_goal)
 
         if keystate[pg.K_s]: # Visual DFS
-            self.path = alg.DFS(self.square_graph, self.start, self.goal)
+            self.path = alg.DFS(alg.SquareGraph(self.map), self.map.custom_start, self.map.custom_goal)
             self.visual_helper()
 
         if keystate[pg.K_e]: # Dijkstra
             self.pathqueue = None
-            self.path = alg.Dijkstra(self.weighed_graph, self.start, self.goal)
+            self.path = alg.Dijkstra(alg.WeightedGraph(self.map), self.map.custom_start, self.map.custom_goal)
 
         if keystate[pg.K_d]: # Visual Dijkstra
-            self.path = alg.Dijkstra(self.weighed_graph, self.start, self.goal)
+            self.path = alg.Dijkstra(alg.WeightedGraph(self.map), self.map.custom_start, self.map.custom_goal)
             self.visual_helper()
 
         if keystate[pg.K_z]: # Dijkstra - only path
             self.pathqueue = None
-            d_path = alg.Dijkstra(self.weighed_graph, self.start, self.goal)
-            self.path = alg.ReconstructPath(d_path, self.start, self.goal)
+            d_path = alg.Dijkstra(alg.WeightedGraph(self.map), self.map.custom_start, self.map.custom_goal)
+            self.path = alg.ReconstructPath(d_path, self.map.custom_start, self.map.custom_goal)
 
         if keystate[pg.K_x]: # Visual Dijkstra - only path
-            d_path = alg.Dijkstra(self.weighed_graph, self.start, self.goal)
-            self.path = alg.ReconstructPath(d_path, self.start, self.goal)
+            d_path = alg.Dijkstra(alg.WeightedGraph(self.map), self.map.custom_start, self.map.custom_goal)
+            self.path = alg.ReconstructPath(d_path, self.map.custom_start, self.map.custom_goal)
             self.visual_helper(True)
 
         if keystate[pg.K_r]: # Astar
             self.pathqueue = None
-            self.path, cost = alg.Astar(self.weighed_graph, self.start, self.goal)
+            self.path, cost = alg.Astar(alg.WeightedGraph(self.map), self.map.custom_start, self.map.custom_goal)
 
         if keystate[pg.K_f]: # Visual Astar
-            self.path, cost = alg.Astar(self.weighed_graph, self.start, self.goal)
+            self.path, cost = alg.Astar(alg.WeightedGraph(self.map), self.map.custom_start, self.map.custom_goal)
             self.visual_helper()
 
         if keystate[pg.K_c]: # Astar - only path
             self.pathqueue = None
-            d_path, cost = alg.Astar(self.weighed_graph, self.start, self.goal)
-            self.path = alg.ReconstructPath(d_path, self.start, self.goal)
+            d_path, cost = alg.Astar(alg.WeightedGraph(self.map), self.map.custom_start, self.map.custom_goal)
+            self.path = alg.ReconstructPath(d_path, self.map.custom_start, self.map.custom_goal)
 
         if keystate[pg.K_v]: # Visual Astar - only path
-            d_path, cost = alg.Astar(self.weighed_graph, self.start, self.goal)
-            self.path = alg.ReconstructPath(d_path, self.start, self.goal)
+            d_path, cost = alg.Astar(alg.WeightedGraph(self.map), self.map.custom_start, self.map.custom_goal)
+            self.path = alg.ReconstructPath(d_path, self.map.custom_start, self.map.custom_goal)
             self.visual_helper(True)
 
     def visual_helper(self, use_stack=False):

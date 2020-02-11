@@ -48,17 +48,15 @@ class PriorityQueue:
         return best_item
 
 class SquareGraph:
-    def __init__(self, width, height):
-        self.width = width
-        self.height = height
-        self.walls = []
+    def __init__(self, tilemap):
+        self.tilemap = tilemap
 
     def in_bounds(self, neighbor):
         (x, y) = neighbor
-        return 0 <= x < self.width and 0 <= y < self.height
+        return 0 <= x < self.tilemap.map_width and 0 <= y < self.tilemap.map_width
 
     def passable(self, neighbor):
-        return neighbor not in self.walls
+        return neighbor not in self.tilemap.walls
 
     def cutting_corner(self, current, neighbor):
         (x, y) = neighbor
@@ -71,7 +69,7 @@ class SquareGraph:
         # possible blocking walls
         posible_walls = [(x-dx, y), (x, y-dy)]
         # If any of the neighbors is a wall return false
-        return posible_walls[0] not in self.walls and posible_walls[1] not in self.walls
+        return posible_walls[0] not in self.tilemap.walls and posible_walls[1] not in self.tilemap.walls
 
     def neighbors(self, current):
         (x, y) = current
@@ -88,8 +86,8 @@ class SquareGraph:
         return current_neighbors
 
 class WeightedGraph(SquareGraph):
-    def __init__(self, width, height):
-        super().__init__(width, height)
+    def __init__(self, tilemap):
+        super().__init__(tilemap)
 
     def cost(self, from_node, to_node):
         # movement from current to neighbor
