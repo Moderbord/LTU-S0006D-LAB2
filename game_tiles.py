@@ -7,7 +7,7 @@ import game_assets as assets
 
 class Start(sprite.Sprite):
     def __init__(self, game, x, y):
-        self.groups = game.all_sprites
+        self.groups = game.sprite_group_all
         sprite.Sprite.__init__(self, self.groups) # Add self to group
         self.game = game
         #self.image = assets.LoadSprite("unicorn.jpg")
@@ -23,7 +23,7 @@ class Start(sprite.Sprite):
 
 class Goal(sprite.Sprite):
     def __init__(self, game, x, y):
-        self.groups = game.all_sprites
+        self.groups = game.sprite_group_all
         sprite.Sprite.__init__(self, self.groups) # Add self to group
         self.game = game
         self.image = Surface((settings.TILE_SIZE, settings.TILE_SIZE))
@@ -37,7 +37,7 @@ class Goal(sprite.Sprite):
 
 class Wall(sprite.Sprite):
     def __init__(self, game, x, y):
-        self.groups = game.all_sprites, game.walls
+        self.groups = game.sprite_group_all, game.sprite_group_walls
         sprite.Sprite.__init__(self, self.groups)
         self.game = game
         self.image = Surface((settings.TILE_SIZE, settings.TILE_SIZE))
