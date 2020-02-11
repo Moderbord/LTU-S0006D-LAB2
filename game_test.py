@@ -3,10 +3,21 @@ from os import path
 import sys
 import pygame as pg
 
+import torch
+import torchvision
+from torchvision import transforms, datasets
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.utils.data import Dataset
+import torch.optim as optim
+import random
+
 import game_settings as settings
 import game_tiles as tiles
 import game_assets as assets
 import algorithms as alg
+
+
 
 class Game:
 
@@ -14,49 +25,50 @@ class Game:
         pg.init()
         pg.display.set_caption(settings.TITLE)
         self.clock = pg.time.Clock()
-        self.load_data()
+        self.all_sprites = pg.sprite.Group()
         self.path = None
         self.pathqueue = None
         self.pathprocess = []
 
     # Loads map file 
-    def load_data(self):
-        self.map_data = []
-        with open(path.join(assets.map_folder, "Map3.txt"), "rt") as f:
-            for line in f:
-                self.map_data.append(line)
-
-    def new(self):
-        self.all_sprites = pg.sprite.Group()
+    def load_map(self, map_name):
         self.walls = pg.sprite.Group()
-        # Construct tileset from map data
+        
+        # parse file
+        m_width = 0
+        m_height = 0
         tmp_walls = []
-        for y, row in enumerate(self.map_data):
-            for x, tile in enumerate(row):
-                if (tile == "X"):
-                    tiles.Wall(self, x, y)
-                    tmp_walls.append((x, y))
-                elif (tile == "S"):
-                    tiles.Start(self, x, y)
-                    self.start = (x, y)
-                elif (tile == "G"):
-                    tiles.Goal(self, x, y)
-                    self.goal = (x, y)
+        with open(path.join(assets.map_folder, map_name), "rt") as f:
+            # Construct tileset from map data
+            for y, row in enumerate(f):
+                m_height += 1
+                m_width = 0
+                for x, tile in enumerate(row):
+                    m_width += 1
+                    if (tile == "X"):
+                        tiles.Wall(self, x, y)
+                        tmp_walls.append((x, y))
+                    elif (tile == "S"):
+                        tiles.Start(self, x, y)
+                        self.start = (x, y)
+                    elif (tile == "G"):
+                        tiles.Goal(self, x, y)
+                        self.goal = (x, y)
 
         # TODO randomize start and goal positions
         
         # Constructs a sqaure graph from map data
-        self.sGraph = alg.SquareGraph(len(self.map_data[0]) - 1, len(self.map_data))
-        self.sGraph.walls = tmp_walls[:]
+        self.square_graph = alg.SquareGraph(m_width, m_height)
+        self.square_graph.walls = tmp_walls[:]
         
         # Constructs a weighed graph from map data
-        self.wGraph = alg.WeightedGraph(len(self.map_data[0]) - 1, len(self.map_data))
-        self.wGraph.walls = tmp_walls[:]
+        self.weighed_graph = alg.WeightedGraph(m_width, m_height)
+        self.weighed_graph.walls = tmp_walls[:]
 
         # Updates screen size to loaded map
         # -1 correction for '\0' char in str
-        settings.MAP_WIDTH = (len(self.map_data[0]) - 1) * settings.TILE_SIZE
-        settings.HAP_HEIGHT = len(self.map_data) * settings.TILE_SIZE
+        settings.MAP_WIDTH = m_width * settings.TILE_SIZE
+        settings.HAP_HEIGHT = m_height * settings.TILE_SIZE
         self.screen = pg.display.set_mode((settings.MAP_WIDTH, settings.HAP_HEIGHT))
 
     def run(self):
@@ -77,53 +89,53 @@ class Game:
 
         if keystate[pg.K_q]: # BFS
             self.pathqueue = None
-            self.path = alg.BFS(self.sGraph, self.start, self.goal)
+            self.path = alg.BFS(self.square_graph, self.start, self.goal)
 
         if keystate[pg.K_a]: # Visual BFS
-            self.path = alg.BFS(self.sGraph, self.start, self.goal)
+            self.path = alg.BFS(self.square_graph, self.start, self.goal)
             self.visual_helper()
 
         if keystate[pg.K_w]: # DFS
             self.pathqueue = None
-            self.path = alg.DFS(self.sGraph, self.start, self.goal)
+            self.path = alg.DFS(self.square_graph, self.start, self.goal)
 
         if keystate[pg.K_s]: # Visual DFS
-            self.path = alg.DFS(self.sGraph, self.start, self.goal)
+            self.path = alg.DFS(self.square_graph, self.start, self.goal)
             self.visual_helper()
 
         if keystate[pg.K_e]: # Dijkstra
             self.pathqueue = None
-            self.path = alg.Dijkstra(self.wGraph, self.start, self.goal)
+            self.path = alg.Dijkstra(self.weighed_graph, self.start, self.goal)
 
         if keystate[pg.K_d]: # Visual Dijkstra
-            self.path = alg.Dijkstra(self.wGraph, self.start, self.goal)
+            self.path = alg.Dijkstra(self.weighed_graph, self.start, self.goal)
             self.visual_helper()
 
         if keystate[pg.K_z]: # Dijkstra - only path
             self.pathqueue = None
-            d_path = alg.Dijkstra(self.wGraph, self.start, self.goal)
+            d_path = alg.Dijkstra(self.weighed_graph, self.start, self.goal)
             self.path = alg.ReconstructPath(d_path, self.start, self.goal)
 
         if keystate[pg.K_x]: # Visual Dijkstra - only path
-            d_path = alg.Dijkstra(self.wGraph, self.start, self.goal)
+            d_path = alg.Dijkstra(self.weighed_graph, self.start, self.goal)
             self.path = alg.ReconstructPath(d_path, self.start, self.goal)
             self.visual_helper(True)
 
         if keystate[pg.K_r]: # Astar
             self.pathqueue = None
-            self.path = alg.Astar(self.wGraph, self.start, self.goal)
+            self.path, cost = alg.Astar(self.weighed_graph, self.start, self.goal)
 
         if keystate[pg.K_f]: # Visual Astar
-            self.path = alg.Astar(self.wGraph, self.start, self.goal)
+            self.path, cost = alg.Astar(self.weighed_graph, self.start, self.goal)
             self.visual_helper()
 
         if keystate[pg.K_c]: # Astar - only path
             self.pathqueue = None
-            d_path = alg.Astar(self.wGraph, self.start, self.goal)
+            d_path, cost = alg.Astar(self.weighed_graph, self.start, self.goal)
             self.path = alg.ReconstructPath(d_path, self.start, self.goal)
 
         if keystate[pg.K_v]: # Visual Astar - only path
-            d_path = alg.Astar(self.wGraph, self.start, self.goal)
+            d_path, cost = alg.Astar(self.weighed_graph, self.start, self.goal)
             self.path = alg.ReconstructPath(d_path, self.start, self.goal)
             self.visual_helper(True)
 
@@ -131,6 +143,7 @@ class Game:
         self.pathqueue = alg.Stack() if use_stack else alg.Queue()
         self.pathprocess = []
         for child, parent in self.path.items():
+            # first node has no parent
             if parent is None:
                 continue
             chi = tuple(x * settings.TILE_SIZE + settings.TILE_SIZE / 2 for x in child)
@@ -180,5 +193,5 @@ class Game:
                 sys.exit()
 
 game = Game()
-game.new()
+game.load_map("Map3.txt")
 game.run()

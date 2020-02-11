@@ -201,7 +201,7 @@ def Astar(graph, start, goal):
                 front.put(neighbor, priority)
                 path[neighbor] = current
 
-    return path
+    return path, travel_costs[current]
 
 def ReconstructPath(path, start, goal):
     current = goal
