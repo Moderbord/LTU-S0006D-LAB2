@@ -1,21 +1,12 @@
-from os import path
-
 import sys
 import pygame as pg
-
-import torch
-import torchvision
-from torchvision import transforms, datasets
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.utils.data import Dataset
-import torch.optim as optim
 
 import game_settings as settings
 import game_tiles as tiles
 import game_assets as assets
 import algorithms as alg
 import map_data
+import nnetw
 
 
 
@@ -185,4 +176,5 @@ class Game:
 
 game = Game()
 game.load_map("Map3.txt")
-game.run()
+nn = nnetw.NeuralNetwork(game)
+nn.train()

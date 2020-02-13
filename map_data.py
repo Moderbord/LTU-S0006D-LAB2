@@ -3,11 +3,13 @@ import random
 
 import game_assets as assets
 import game_tiles as tiles
+import algorithms as alg
 
 class TileMap:
 
     def __init__(self):
         self.tile_data = []
+        #self.empty_tile_data = []
         self.walls = []
         self.map_width = 0
         self.map_height = 0
@@ -41,6 +43,10 @@ class TileMap:
 
                 self.tile_data.append(inner_array)
 
+        # # create a empty copy of the same map
+        # for i in range(self.map_height):
+        #     self.empty_tile_data.append([0] * self.map_width)
+
     def randomize_start_goal(self, game=None):
         s_ok = False
         g_ok = False
@@ -64,6 +70,7 @@ class TileMap:
             tiles.Start(game, x1, y1)
             tiles.Goal(game, x2, y2)
 
-    def random_astar(self):
-        pass
+    def astar_cost(self):
+        path, cost = alg.Astar(alg.WeightedGraph(self), self.custom_start, self.custom_goal)
+        return cost
     
