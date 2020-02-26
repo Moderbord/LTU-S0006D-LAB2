@@ -28,14 +28,9 @@ class DatasetTilemap(Dataset):
             self.training_map.randomize_start_goal() # randomize new positions
 
             # take new positions and put them in empty map of same size
-            (x1, y1) = self.training_map.custom_start
-            (x2, y2) = self.training_map.custom_goal
-
-            tmp_map = []
-            for j in range(self.training_map.map_height):
-                tmp_map.append([0] * self.training_map.map_width)
-            tmp_map[x1][y1] = 2
-            tmp_map[x2][y2] = 2
+            p1 = self.training_map.custom_start
+            p2 = self.training_map.custom_goal
+            tmp_map = [p1, p2]
             
             x.append(tmp_map)
 
@@ -48,6 +43,10 @@ class DatasetTilemap(Dataset):
         
     def __getitem__(self, index):
         return torch.Tensor(self.X[index]), self.y[index]
+
+    @property
+    def output_max(self):
+        return max(self.y)
 
 class Net(nn.Module):
 
@@ -87,14 +86,15 @@ class NeuralNetwork:
     def __init__(self, context, instruction_set=None):
         self.context = context
         self.instruction_set = instruction_set if instruction_set else InstructionSet()
-        self.net = Net(context.tilemap.map_width * context.tilemap.map_height, context.tilemap.map_width * context.tilemap.map_height * 2)
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.net.eval()
+        self.net = None
 
     def train(self):
 
         train_data = DatasetTilemap(self.context, self.instruction_set.data_size)
         test_data = DatasetTilemap(self.context, self.instruction_set.data_size)
+
+        self.net = Net(4, max(train_data.output_max, test_data.output_max) + 1)
 
         train_set = torch.utils.data.DataLoader(train_data, self.
         instruction_set.set_size, shuffle=True)
@@ -134,3 +134,20 @@ class NeuralNetwork:
                         total += 1
 
         print("Accuracy: ", round((correct/total)*100, 3))
+
+    def save(self, path):
+        torch.save({
+            'model_dict':self.net.state_dict(),
+            'model_in':self.net.input,
+            'model_out':self.net.output}, path)
+        print("Model saved")
+
+    def load(self, path):
+        checkpoint = torch.load(path)
+        in_size = checkpoint['model_in']
+        out_size = checkpoint['model_out']
+        self.net = Net(in_size, out_size)
+        self.net.load_state_dict(checkpoint['model_dict'])
+        self.net.to(self.device)
+        self.net.eval()
+        print("Model loaded")

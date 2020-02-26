@@ -21,13 +21,15 @@ class Game:
         self.pathqueue = None
         self.pathprocess = []
         self.tilemap = map_data.TileMap()
-
+        self.neural = None
 
     # Loads tilemap file 
     def load_map(self, map_name):
 
+        # load map
         self.tilemap.load_map_template(map_name)
-
+        # inits neural network
+        self.neural = nnetw.NeuralNetwork(self) # -- REQUIRES MAP
         # Updates screen size to loaded tilemap
         # -1 correction for '\0' char in str
         settings.MAP_WIDTH = self.tilemap.map_width * settings.TILE_SIZE
@@ -64,9 +66,18 @@ class Game:
         if keystate[pg.K_ESCAPE]:
             pg.event.post(pg.event.Event(pg.QUIT))
 
-        if keystate[pg.K_p]:
+        if keystate[pg.K_TAB]:
             self.sprite_group_all.empty()
             self.tilemap.randomize_start_goal(self)
+
+        if keystate[pg.K_KP0]:
+            self.neural.train()
+
+        if keystate[pg.K_KP1]:
+            self.neural.save(assets.neural_network_model_folder)
+
+        if keystate[pg.K_KP2]:
+            self.neural.load(assets.neural_network_model_folder)
 
         if keystate[pg.K_q]: # BFS
             self.pathqueue = None
@@ -120,6 +131,14 @@ class Game:
             self.path = alg.ReconstructPath(d_path, self.tilemap.custom_start, self.tilemap.custom_goal)
             self.visual_helper(True)
 
+        if keystate[pg.K_t]: # Astar NN
+            self.pathqueue = None
+            self.path, cost = alg.Astar(alg.WeightedGraph(self.tilemap), self.tilemap.custom_start, self.tilemap.custom_goal, self.neural)
+
+        if keystate[pg.K_g]: # Visual Astar NN
+            self.path, cost = alg.Astar(alg.WeightedGraph(self.tilemap), self.tilemap.custom_start, self.tilemap.custom_goal, self.neural)
+            self.visual_helper()
+
     def visual_helper(self, use_stack=False):
         self.pathqueue = alg.Stack() if use_stack else alg.Queue()
         self.pathprocess = []
@@ -172,9 +191,7 @@ class Game:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
-                sys.exit()
 
 game = Game()
 game.load_map("Map3.txt")
-nn = nnetw.NeuralNetwork(game)
-nn.train()
+game.run()

@@ -1,4 +1,5 @@
 import collections
+import torch
 
 class Queue:
     def __init__(self):
@@ -167,12 +168,23 @@ def Dijkstra(graph, start, goal):
     return path
 
 # Manhattan distance heuristic
-def Heuristic(from_node, to_node):
+def HeuristicManhattar(from_node, to_node):
     (x1, y1) = from_node
     (x2, y2) = to_node
     return abs(x2 - x1) + abs(y2 - y1)
 
-def Astar(graph, start, goal):
+# Neural network heuristic
+def HeuristicNeural(model, from_node, to_node):
+    p1 = from_node
+    p2 = to_node
+    grid = [p1, p2]
+    X = torch.Tensor(grid)
+    X = X.to(model.device)
+    output = model.net(X.view(-1, model.net.input))
+    output = output.cpu()
+    return int(torch.argmax(output))
+
+def Astar(graph, start, goal, model=None):
     front = PriorityQueue()
     front.put(start, 0)
     path = {}
@@ -195,7 +207,12 @@ def Astar(graph, start, goal):
             # If travel cost to neighbor hasn't already been evaluated, or is lower than previous evaluated travel cost, update the travel cost
             if neighbor not in travel_costs or new_cost < travel_costs[neighbor]:
                 travel_costs[neighbor] = new_cost
-                priority = new_cost + Heuristic(neighbor, goal) # Heuristic influence
+
+                if model:
+                    priority = new_cost + HeuristicNeural(model, neighbor, goal) # Neural Network influence
+                else:
+                    priority = new_cost + HeuristicManhattar(neighbor, goal) # Manhattar influence
+
                 front.put(neighbor, priority)
                 path[neighbor] = current
 
