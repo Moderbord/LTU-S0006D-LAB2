@@ -9,4 +9,4 @@ map_folder = path.join(game_folder, "assets\maps")
 neural_network_model_folder = R"assets\neural\map3_model.pth"
 
 def LoadSprite(asset_name):
-    return image.load(os.path.join(sprite_folder, asset_name)).convert()
+    return image.load(path.join(sprite_folder, asset_name)).convert()
