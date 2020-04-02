@@ -142,25 +142,35 @@ class Game:
 
         if keystate[pg.K_p]: # test
 
-            num_tests=1
+            num_tests=50
 
             def bfs_test():
+                self.sprite_group_all.empty()
+                self.tilemap.randomize_start_goal(self)
                 self.pathqueue = None
                 self.path = alg.BFS(alg.SquareGraph(self.tilemap), self.tilemap.custom_start, self.tilemap.custom_goal)
 
             def dfs_test():
+                self.sprite_group_all.empty()
+                self.tilemap.randomize_start_goal(self)
                 self.pathqueue = None
                 self.path = alg.DFS(alg.SquareGraph(self.tilemap), self.tilemap.custom_start, self.tilemap.custom_goal)
 
             def dijkstra_test():
+                self.sprite_group_all.empty()
+                self.tilemap.randomize_start_goal(self)
                 self.pathqueue = None
                 self.path = alg.Dijkstra(alg.WeightedGraph(self.tilemap), self.tilemap.custom_start, self.tilemap.custom_goal)
 
             def astar_test():
+                self.sprite_group_all.empty()
+                self.tilemap.randomize_start_goal(self)
                 self.pathqueue = None
                 self.path, cost = alg.Astar(alg.WeightedGraph(self.tilemap), self.tilemap.custom_start, self.tilemap.custom_goal)
 
             def neural_test():
+                self.sprite_group_all.empty()
+                self.tilemap.randomize_start_goal(self)
                 self.pathqueue = None
                 self.path, cost = alg.Astar(alg.WeightedGraph(self.tilemap), self.tilemap.custom_start, self.tilemap.custom_goal, self.neural)
 
@@ -230,5 +240,5 @@ class Game:
                 pg.quit()
 
 game = Game()
-game.load_map("Map1.txt")
+game.load_map("Map3.txt")
 game.run()
