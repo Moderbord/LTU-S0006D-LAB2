@@ -1,4 +1,5 @@
 import sys
+import timeit
 import pygame as pg
 
 import game_settings as settings
@@ -139,6 +140,42 @@ class Game:
             self.path, cost = alg.Astar(alg.WeightedGraph(self.tilemap), self.tilemap.custom_start, self.tilemap.custom_goal, self.neural)
             self.visual_helper()
 
+        if keystate[pg.K_p]: # test
+
+            num_tests=1
+
+            def bfs_test():
+                self.pathqueue = None
+                self.path = alg.BFS(alg.SquareGraph(self.tilemap), self.tilemap.custom_start, self.tilemap.custom_goal)
+
+            def dfs_test():
+                self.pathqueue = None
+                self.path = alg.DFS(alg.SquareGraph(self.tilemap), self.tilemap.custom_start, self.tilemap.custom_goal)
+
+            def dijkstra_test():
+                self.pathqueue = None
+                self.path = alg.Dijkstra(alg.WeightedGraph(self.tilemap), self.tilemap.custom_start, self.tilemap.custom_goal)
+
+            def astar_test():
+                self.pathqueue = None
+                self.path, cost = alg.Astar(alg.WeightedGraph(self.tilemap), self.tilemap.custom_start, self.tilemap.custom_goal)
+
+            def neural_test():
+                self.pathqueue = None
+                self.path, cost = alg.Astar(alg.WeightedGraph(self.tilemap), self.tilemap.custom_start, self.tilemap.custom_goal, self.neural)
+
+            bfs_time = timeit.timeit(bfs_test, number=num_tests) / num_tests
+            print("BFS: " + str(bfs_time))
+            dfs_time = timeit.timeit(dfs_test, number=num_tests) / num_tests
+            print("DFS: " + str(dfs_time))
+            # dijkstra_time = timeit.timeit(dijkstra_test, number=num_tests) / num_tests
+            # print("Dijkstra: " + str(dijkstra_time))
+            astar_time = timeit.timeit(astar_test, number=num_tests) / num_tests
+            print("Astar: " + str(astar_time))
+            neural_time = timeit.timeit(neural_test, number=num_tests) / num_tests
+            print("Neural: " + str(neural_time) + "\n\n")
+
+
     def visual_helper(self, use_stack=False):
         self.pathqueue = alg.Stack() if use_stack else alg.Queue()
         self.pathprocess = []
@@ -193,5 +230,5 @@ class Game:
                 pg.quit()
 
 game = Game()
-game.load_map("Map3.txt")
+game.load_map("Map1.txt")
 game.run()

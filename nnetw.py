@@ -143,7 +143,8 @@ class NeuralNetwork:
         print("Model saved")
 
     def load(self, path):
-        checkpoint = torch.load(path)
+        checkpoint = torch.load(path, map_location=torch.device("cuda:0" if torch.cuda.is_available() else "cpu"))
+
         in_size = checkpoint['model_in']
         out_size = checkpoint['model_out']
         self.net = Net(in_size, out_size)
